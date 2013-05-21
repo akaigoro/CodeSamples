@@ -81,7 +81,7 @@ class ClassWithGetterVol implements ClassWithGetter {
 
 public class HabrGetterTest implements Runnable {
     static final int N = 100;
-    final static int size = 1_000_000;
+    final static int size = 100_000;
     ClassWithGetter obj;
     CountDownLatch latch = new CountDownLatch(N);
     CyclicBarrier barrier;
@@ -115,7 +115,7 @@ public class HabrGetterTest implements Runnable {
         latch.await();
         end = System.nanoTime();
         final long el = (end - start);
-        double ops=el*1.0/(size*N);
+        float ops=el*1.0f/(size*N);
         System.out.println("N=" + N + "; elapsed ms=" + (el / 1_000_000)+"; op (ns)="+ops);
     }
 
@@ -131,7 +131,7 @@ public class HabrGetterTest implements Runnable {
                 e.printStackTrace();
                 return;
             }
-            for (int i = 0; i < size / 10; i++) {
+            for (int i = 0; i < size; i++) {
                 sum += obj.get();
             }
             latch.countDown();
@@ -146,5 +146,6 @@ public class HabrGetterTest implements Runnable {
         new HabrGetterTest(new ClassWithGetterAt()).test();
         new HabrGetterTest(new ClassWithGetterLock()).test();
         new HabrGetterTest(new ClassWithGetterSync()).test();
+        System.out.println(">>>> end");
     }
 }
