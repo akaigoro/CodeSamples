@@ -10,16 +10,18 @@ import org.junit.Test;
 
 public class ActorTest {
 	
-	Executor executor=Executors.newFixedThreadPool(2);
+	Executor executor=Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	CountDownLatch liveTokens;
 	AtomicInteger totalPassed=new AtomicInteger(0);
 	
     @Test
 	public void ringTest() throws Throwable {
-		int N=100; // number of Nodes in the ring
-		Node[] nodes=new Node[N];
+		int N=1000000; // number of Nodes in the ring
+		int mCount=10; // mean time to live
 
-		// make ring of Nodes
+        long startTime0=System.currentTimeMillis();
+        // make ring of Nodes
+		Node[] nodes=new Node[N];
 		nodes[0]=new Node();
 		for (int k=1; k<N; k++) {
 			Node n=new Node();
@@ -27,13 +29,14 @@ public class ActorTest {
 			nodes[k]=n;
 		}
 		nodes[0].next=nodes[N-1];
-		
+        long startTime=System.currentTimeMillis();
+		long elapsed = startTime-startTime0;
+		System.out.println("creating "+N+" actors::"+elapsed+" ms; throughput:"+N/elapsed+" K actors/sec");
+
         // start execution
 		// pass N tokens to random nodes
-        long startTime=System.currentTimeMillis();
 		liveTokens=new CountDownLatch(N);
 		Random rand=new Random();
-		int mCount=10000; // mean time to live
 		for (int k=0; k<N; k++) {
 			int count=rand.nextInt(2*mCount);
 			int nodeIndex=rand.nextInt(N);
@@ -42,8 +45,10 @@ public class ActorTest {
 		
 		// wait all the work done
 		liveTokens.await();
-		long elapsed=System.currentTimeMillis()-startTime;
-		System.out.println(executor.getClass().getSimpleName()+": messages:"+totalPassed.get()+"; time:"+elapsed+" ms");
+		elapsed=System.currentTimeMillis()-startTime;
+		final int total = totalPassed.get();
+		System.out.println(executor.getClass().getSimpleName()+": messages:"+total+
+				"; time:"+elapsed+" ms; throughput:"+(total)/elapsed+" K messages/sec");
 	}
 
 	static class Token {
@@ -64,15 +69,19 @@ public class ActorTest {
 	    public void post(final Token token) {
 	        super.post(new Message() {
 	            protected void run() {
-	                totalPassed.incrementAndGet();
-	                if (token.value==0) {
-	                    liveTokens.countDown();
-	                } else {
-	                    token.value--;
-	                    next.post(token);
-	                }
+	                act(token);
 	            }
 	        });
 	    }
+
+		private void act(final Token token) {
+			totalPassed.incrementAndGet();
+			if (token.value==0) {
+			    liveTokens.countDown();
+			} else {
+			    token.value--;
+			    next.post(token);
+			}
+		}
 	}
 }

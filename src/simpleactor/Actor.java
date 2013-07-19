@@ -18,8 +18,6 @@ public abstract class Actor implements Runnable {
     /** rest of tokens */
     private Queue<Message> queue = new LinkedList<Message>();
 
-    private boolean isFired=false;
-
     public Actor(Executor executor) {
         this.executor = executor;
     }
@@ -29,13 +27,15 @@ public abstract class Actor implements Runnable {
      * Saves the message and initiates Actor's execution.
      */
     protected void post(Message message) {
+    	if (message==null) {
+    		throw new IllegalArgumentException("message may not be null"); 
+    	}
         synchronized(this) {
-            if (isFired) {
+            if (this.message != null) {
                 queue.add(message);
                 return;
             }
             this.message=message;
-            isFired=true; // to prevent multiple concurrent firings
         }
         executor.execute(this);
     }
@@ -45,9 +45,7 @@ public abstract class Actor implements Runnable {
         for (;;) {
             this.message.run();
             synchronized(this) {
-                this.message = queue.poll();  // consume token
-                if (this.message==null) {
-                    isFired=false; // allow firing
+                if ((this.message = queue.poll())==null) {
                     return;
                 }
             }
