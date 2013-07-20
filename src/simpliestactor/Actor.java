@@ -1,4 +1,4 @@
-package simpleactor;
+package simpliestactor;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -13,8 +13,6 @@ import java.util.concurrent.Executor;
 public abstract class Actor implements Runnable {
     private final Executor executor;
 
-    /** current token */
-    private Message message=null;
     /** rest of tokens */
     private final Queue<Message> queue = new LinkedList<Message>();
 
@@ -27,15 +25,15 @@ public abstract class Actor implements Runnable {
      * Saves the message and initiates Actor's execution.
      */
     protected final void post(Message message) {
-    	if (message==null) {
-    		throw new IllegalArgumentException("message may not be null"); 
-    	}
+        if (message==null) {
+            throw new IllegalArgumentException("message may not be null"); 
+        }
         synchronized(queue) {
-            if (this.message != null) {
-                queue.add(message);
+            boolean wasEmpty = queue.isEmpty();
+            queue.add(message);
+            if (!wasEmpty) {
                 return;
             }
-            this.message=message;
         }
         executor.execute(this);
     }
@@ -43,12 +41,14 @@ public abstract class Actor implements Runnable {
     @Override
     public final void run() {
         for (;;) {
-            this.message.run();
+            /** current token */
+            Message message;
             synchronized(queue) {
-                if ((this.message = queue.poll())==null) {
+                if ((message = queue.poll())==null) {
                     return;
                 }
             }
+            message.run();
         }
     }
 

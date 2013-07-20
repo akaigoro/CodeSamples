@@ -1,6 +1,5 @@
 package simpleactor;
 
-import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -9,16 +8,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 public class ActorTest {
-	
 	Executor executor=Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 	CountDownLatch liveTokens;
 	AtomicInteger totalPassed=new AtomicInteger(0);
 	
     @Test
-	public void ringTest() throws Throwable {
-		int N=1000000; // number of Nodes in the ring
-		int mCount=10; // mean time to live
+    public void test1M() throws Throwable {
+        ringTest(100, 1000000, 0);
+    }
 
+    @Test
+    public void test1K() throws Throwable {
+        ringTest(1000, 1000, 999);
+    }
+
+    @Test
+    public void ringTest1() throws Throwable {
+        ringTest(1, 1, 1);
+    }
+
+    /**
+     * @param N number of Nodes in the ring
+     * @param mCount mean time to live
+     */
+    public void ringTest(int N, int T, int mCount) throws Throwable {
         long startTime0=System.currentTimeMillis();
         // make ring of Nodes
 		Node[] nodes=new Node[N];
@@ -31,24 +44,31 @@ public class ActorTest {
 		nodes[0].next=nodes[N-1];
         long startTime=System.currentTimeMillis();
 		long elapsed = startTime-startTime0;
-		System.out.println("creating "+N+" actors::"+elapsed+" ms; throughput:"+N/elapsed+" K actors/sec");
+        System.out.print("creating "+N+" actors::"+elapsed+" ms;");
+        if (elapsed==0) {
+            System.out.println();
+        } else {
+            System.out.println("throughput:"+N/elapsed+" K actors/sec");
+        }
 
         // start execution
 		// pass N tokens to random nodes
 		liveTokens=new CountDownLatch(N);
-		Random rand=new Random();
-		for (int k=0; k<N; k++) {
-			int count=rand.nextInt(2*mCount);
-			int nodeIndex=rand.nextInt(N);
-			nodes[nodeIndex].post(new Token(count));
+		for (int k=0; k<T; k++) {
+			nodes[k%N].post(new Token(mCount));
 		}
 		
 		// wait all the work done
 		liveTokens.await();
 		elapsed=System.currentTimeMillis()-startTime;
 		final int total = totalPassed.get();
-		System.out.println(executor.getClass().getSimpleName()+": messages:"+total+
-				"; time:"+elapsed+" ms; throughput:"+(total)/elapsed+" K messages/sec");
+        System.out.print(executor.getClass().getSimpleName()+": messages:"+total+
+                "; time:"+elapsed+" ms;");
+        if (elapsed==0) {
+            System.out.println();
+        } else {
+            System.out.println(" throughput:"+(total)/elapsed+" K messages/sec");
+        }
 	}
 
 	static class Token {
