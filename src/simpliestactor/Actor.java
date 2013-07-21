@@ -5,10 +5,9 @@ import java.util.Queue;
 import java.util.concurrent.Executor;
 
 /** 
- * Actors work asynchronously and in parallel, using a thread pool with limited
- * number of threads, so being a light-weight alternative to Threads.
- * 
- * @author Alexei Kaigorodov
+ * This wrong implementation.
+ * It allows parallel execution of messages under some circumstances.
+ * SerialExecTest failed.
  */
 public abstract class Actor implements Runnable {
     private final Executor executor;
