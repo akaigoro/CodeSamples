@@ -5,15 +5,15 @@ import java.util.Queue;
 import java.util.concurrent.Executor;
 
 /** 
- * This wrong implementation.
- * It allows parallel execution of messages under some circumstances.
- * SerialExecTest failed.
+ * Messages are already Runnables.
  */
 public abstract class Actor implements Runnable {
     private final Executor executor;
 
+    /** current token */
+    private Runnable message=null;
     /** rest of tokens */
-    private final Queue<Message> queue = new LinkedList<Message>();
+    private final Queue<Runnable> queue = new LinkedList<Runnable>();
 
     public Actor(Executor executor) {
         this.executor = executor;
@@ -23,16 +23,16 @@ public abstract class Actor implements Runnable {
      * Frontend method which may be called from other Thread or Actor.
      * Saves the message and initiates Actor's execution.
      */
-    protected final void post(Message message) {
+    protected final void execute(Runnable message) {
         if (message==null) {
             throw new IllegalArgumentException("message may not be null"); 
         }
         synchronized(queue) {
-            boolean wasEmpty = queue.isEmpty();
-            queue.add(message);
-            if (!wasEmpty) {
+            if (this.message != null) {
+                queue.add(message);
                 return;
             }
+            this.message=message;
         }
         executor.execute(this);
     }
@@ -40,18 +40,12 @@ public abstract class Actor implements Runnable {
     @Override
     public final void run() {
         for (;;) {
-            /** current token */
-            Message message;
+            this.message.run();
             synchronized(queue) {
-                if ((message = queue.poll())==null) {
+                if ((this.message = queue.poll())==null) {
                     return;
                 }
             }
-            message.run();
         }
-    }
-
-    protected abstract class Message {
-        protected abstract void run();
     }
 }

@@ -28,8 +28,8 @@ public class SerialExecTest {
 		}
 		
 	    public void post(final Integer t) {
-	        super.post(new Message() {
-	            protected void run() {
+	        super.execute(new Runnable() {
+	            public void run() {
 	                Assert.assertFalse(isRunning);
 	                isRunning=true;
 	                act(t);
