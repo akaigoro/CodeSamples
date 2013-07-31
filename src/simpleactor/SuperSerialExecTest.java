@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class SerialExecTest {
+public class SuperSerialExecTest {
     Executor executor=Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     CountDownLatch liveTokens;
     AtomicInteger totalPassed=new AtomicInteger(0);
@@ -36,9 +36,9 @@ public class SerialExecTest {
         long startTime0=System.currentTimeMillis();
         // make ring of Nodes
         Node[] nodes=new Node[N];
-        nodes[0]=new Node();
+        nodes[0]=new Node_();
         for (int k=1; k<N; k++) {
-            Node n=new Node();
+            Node n=new Node_();
             n.next=nodes[k-1];
             nodes[k]=n;
         }
@@ -71,35 +71,23 @@ public class SerialExecTest {
             System.out.println(" throughput:"+(total)/elapsed+" K messages/sec");
         }
     }
-	
+    
     @Test
     public void serialTest() throws Throwable {
         liveTokens=new CountDownLatch(2);
-		Node node=new Node();
-		node.next=node;
+        Node node=new Node_();
+        node.next=node;
         node.post(new Integer(1));
         node.post(new Integer(1));
         // wait all the work done
-		liveTokens.await();
-	}
+        liveTokens.await();
+    }
 
-    class Node extends SerialExecutor {
+    class Node {
         Node next;
         boolean isRunning=false;
 
-        public Node() {
-            super(executor);
-        }
-        
-        public void post(final Integer token) {
-            super.execute(new Runnable() {
-                public void run() {
-                    act(token);
-                }
-            });
-        }
-
-        private void act(final Integer token) {
+        public void post(Integer token) {
             Assert.assertFalse(isRunning);
             isRunning=true;
             totalPassed.incrementAndGet();
@@ -109,6 +97,18 @@ public class SerialExecTest {
                 next.post(token-1);
             }
             isRunning=false;
+        }
+    }
+
+    class Node_ extends Node {
+        SerialExecutor se=new SerialExecutor(executor);
+        
+        public void post(final Integer token) {
+            se.execute(new Runnable() {
+                public void run() {
+                    Node_.super.post(token);
+                }
+            });
         }
     }
 }
