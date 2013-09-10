@@ -29,7 +29,7 @@ public class SerialExecutor implements Executor, Runnable {
         }
         synchronized(tasks ) {
             if (active != null) {
-                tasks .add(task);
+                tasks.add(task);
                 return;
             }
             active=task;
@@ -40,8 +40,8 @@ public class SerialExecutor implements Executor, Runnable {
     @Override
     public final void run() {
         for (;;) {
-            this.active.run();
-            synchronized(tasks ) {
+            active.run();
+            synchronized(tasks) {
                 if ((active = tasks.poll())==null) {
                     return;
                 }
