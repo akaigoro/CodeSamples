@@ -7,7 +7,7 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package threadedRingBuffer;
+package ringBuffer.threaded;
 
 import java.util.concurrent.ExecutionException;
 
@@ -15,115 +15,16 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
+import util.LongValue;
+
 public class ThreadedBatchRingBufferTest {    
-	RingBuffer<LongValue> ringBuffer;
-	Window<LongValue> writeWindow;
-	Window<LongValue> readWindow;
-
-	public void init() {
-	    int bufSize = 1024;
-        ringBuffer=new RingBuffer<LongValue>(bufSize);
-	    writeWindow=ringBuffer.writeWindow;
-	    readWindow=ringBuffer.readWindow;	    
-        for (int k=0; k<bufSize; k++) {
-            writeWindow.set(k, new LongValue(0));
-        }
-	}
-	
-    static abstract class Window<T> {
-        RingBuffer<T> ringBuffer;
-        Object[] entries;
-        int bufSize;
-        protected long position;
-        int waitCount=0;
-        
-        public Window(RingBuffer<T> ringBuffer) {
-            this.ringBuffer = ringBuffer;
-            this.entries = ringBuffer.entries;
-            this.bufSize = ringBuffer.bufSize;
-        }
-
-        @SuppressWarnings("unchecked")
-        public T get(long position) {
-            return (T)entries[(int)(position%bufSize)];
-        }
-
-        public void set(long position, T object) {
-            entries[(int)(position%bufSize)]=object;
-        }
-
-        public abstract void waitLimit(long position2) throws InterruptedException;
-
-        public abstract long getLimit();
-
-        public synchronized long getPosition() {
-            return position;
-        }
-
-        public synchronized void waitPosition(long position2) throws InterruptedException {
-            while (position2>=position) {
-                waitCount++;
-                this.wait();
-            }
-        }
-
-        public synchronized void setPosition(long position) {
-            this.position=position;
-            this.notifyAll();
-        }
-    }
-
-    static class RingBuffer<T> {
-        int bufSize;
-        Object[] entries;
-        Window<T> writeWindow;
-        Window<T> readWindow;
-
-        public RingBuffer(int bufSize) {
-            this.bufSize = bufSize;
-            entries=new Object[bufSize];
-            writeWindow=new WriteWindow();
-            readWindow=new ReadWindow();
-        }
-      
-        class WriteWindow extends Window<T> {
-            public WriteWindow() {
-                super(RingBuffer.this);
-            }
-
-            public long getLimit() {
-                return readWindow.getPosition()+bufSize;
-            }
-
-            public void waitLimit(long limit) throws InterruptedException {
-                readWindow.waitPosition(limit-bufSize);
-            }
-        }
-        
-        class ReadWindow extends Window<T> {
-            
-            public ReadWindow() {
-                super(RingBuffer.this);
-            }
-
-            @Override
-            public long getLimit() {
-                return writeWindow.getPosition();
-            }
-
-            @Override
-            public void waitLimit(long limit) throws InterruptedException {
-                writeWindow.waitPosition(limit);
-            }
-        }
-    }
 
     static abstract class Worker implements Runnable {
-        Window<LongValue> window;
+        BatchRingBuffer<LongValue>.Window window;
         int iterations;
         String name;
 
-        public Worker(Window<LongValue> window, int iterations, String name) {
+        public Worker(BatchRingBuffer<LongValue>.Window window, int iterations, String name) {
             this.window = window;
             this.iterations = iterations;
             this.name = name;
@@ -148,12 +49,13 @@ public class ThreadedBatchRingBufferTest {
                             waitCount++;
                             limit=window.getLimit();
                         }
-                    } else if (position-broadcastedPos >= 25) { // optimal batch size
+                    } 
+                    act(position);
+                    if (position-broadcastedPos >= 25) { // optimal batch size
                         window.setPosition(position);
                         broadcastedPos=position;
                         setPosCount++;
                     }
-                    act(position);
                 }
             } catch (InterruptedException e) {
             }
@@ -168,7 +70,7 @@ public class ThreadedBatchRingBufferTest {
 
     static class Writer extends Worker {
 
-        public Writer(Window<LongValue> window, int iterations) {
+        public Writer(BatchRingBuffer<LongValue>.Window window, int iterations) {
             super(window, iterations, "Writer");
             // TODO Auto-generated constructor stub
         }
@@ -182,7 +84,7 @@ public class ThreadedBatchRingBufferTest {
     
     static class Reader extends Worker {
 
-        public Reader(Window<LongValue> window, int iterations) {
+        public Reader(BatchRingBuffer<LongValue>.Window window, int iterations) {
             super(window, iterations, "Reader");
         }
 
@@ -195,9 +97,13 @@ public class ThreadedBatchRingBufferTest {
     
     void test(int iterations) throws InterruptedException {
         System.out.printf("<<iterations=%,d\n", iterations);
-        init();
-        Writer writer=new Writer(writeWindow, iterations);
-        Reader reader=new Reader(readWindow, iterations);
+        int bufSize = 1024;
+        BatchRingBuffer<LongValue> ringBuffer=new BatchRingBuffer<LongValue>(bufSize);
+        for (int k=0; k<bufSize; k++) {
+            ringBuffer.writeWindow.set(k, new LongValue(0));
+        }
+        Writer writer=new Writer(ringBuffer.writeWindow, iterations);
+        Reader reader=new Reader(ringBuffer.readWindow, iterations);
         
         Thread rt=new Thread(reader);
         Thread wt=new Thread(writer);

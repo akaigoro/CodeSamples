@@ -1,4 +1,4 @@
-package threadedRingBuffer;
+package util;
 
 /**
  * the type of messages floating between nodes
