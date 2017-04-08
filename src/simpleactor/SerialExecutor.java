@@ -1,6 +1,6 @@
 package simpleactor;
 
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 
@@ -13,7 +13,7 @@ public class SerialExecutor implements Executor, Runnable {
     /** current task */
     private Runnable active=null;
     /** rest of tasks */
-    private final Queue<Runnable> tasks  = new LinkedList<Runnable>();
+    private final Queue<Runnable> tasks  = new ArrayDeque<Runnable>();
 
     public SerialExecutor(Executor executor) {
         this.executor = executor;
