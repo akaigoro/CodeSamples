@@ -11,6 +11,7 @@ package ringBuffer.blockingQueues;
 
 import java.util.concurrent.ExecutionException;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import util.LongValue;
