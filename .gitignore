@@ -1,7 +1,11 @@
+.classpath
+.project
 .settings
-.idea
+target
+classes/
 *.iml
-*/*.iml
-*/doc/*
-target/
-*/bin/*
+*.ipr
+.idea
+.DS_Store
+.metadata/
+log*
