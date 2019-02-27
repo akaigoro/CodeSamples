@@ -5,10 +5,12 @@ import com.sun.net.httpserver.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.concurrent.ForkJoinPool;
 
 public class SimpleHttpServer {
-    static InetSocketAddress inetSocketAddress = new InetSocketAddress(8765);
+    public static int port = 8765;
+    static InetSocketAddress inetSocketAddress = new InetSocketAddress(port);
 
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create();
@@ -32,7 +34,8 @@ public class SimpleHttpServer {
   */
             StringBuilder builder = new StringBuilder();
 
-            builder.append("<h1>URI: ").append(exchange.getRequestURI()).append("</h1>");
+            URI requestURI = exchange.getRequestURI();
+            builder.append("<h1>URI: ").append(requestURI).append("</h1>");
 
             Headers headers = exchange.getRequestHeaders();
             for (String header : headers.keySet()) {
@@ -40,7 +43,8 @@ public class SimpleHttpServer {
                         .append(headers.getFirst(header)).append("</p>");
             }
 
-            byte[] bytes = builder.toString().getBytes();
+            String reply = builder.toString();
+            byte[] bytes = reply.getBytes();
             exchange.sendResponseHeaders(200, bytes.length);
 
             OutputStream os = exchange.getResponseBody();

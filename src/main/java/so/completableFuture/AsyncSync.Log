@@ -1,0 +1,50 @@
+com.baeldung.annotation.processor.Coroutine
+com.baeldung.annotation.processor.Coroutine
+
+com.baeldung.annotation.processor.Coroutine
+1000 bing
+
+async:17387
+sync:7580
+sync:1638
+async:1279
+
+sync:4109
+async:12303
+async:3421
+sync:1708
+
+100 bing
+
+sync:1237
+async:3366
+async:3207
+sync:1185
+async:3158
+sync:1348
+sync:1667
+async:3862
+
+100 bing
+
+async:3472
+sync:1248
+sync:1248
+async:3017
+sync:1235
+async:3237
+async:3435
+sync:1253
+
+
+100 localhost
+
+async:826
+sync:772
+sync:760
+async:766
+sync:758
+async:778
+async:762
+sync:758
+
