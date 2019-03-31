@@ -1,7 +1,6 @@
 package actor.serialexec;
 
 import actor.simpleactor.SimpleActor;
-
 import java.util.concurrent.Executor;
 
 /** 

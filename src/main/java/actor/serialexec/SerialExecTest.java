@@ -83,7 +83,7 @@ public class SerialExecTest {
 		liveTokens.await();
 	}
 
-    class Node extends SerialExecutor {
+    class Node extends SerialExecutorActor<Integer> {
         Node next;
         boolean isRunning=false;
 
@@ -91,15 +91,7 @@ public class SerialExecTest {
             super(executor);
         }
         
-        public void post(final Integer token) {
-            super.execute(new Runnable() {
-                public void run() {
-                    act(token);
-                }
-            });
-        }
-
-        private void act(final Integer token) {
+        protected void act(final Integer token) {
             Assert.assertFalse(isRunning);
             isRunning=true;
             totalPassed.incrementAndGet();
