@@ -1,13 +1,13 @@
-package simpleactor;
+package actor.simpleactor;
+
+import actor.IActor;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;
 
-/** 
- * Messages are already Runnables.
- */
-public abstract class SimpleActor<T> implements Runnable {
+
+public abstract class SimpleActor<T> implements IActor<T> {
     private final Executor executor;
     
     /** current task */
@@ -27,26 +27,24 @@ public abstract class SimpleActor<T> implements Runnable {
         if (msg==null) {
             throw new IllegalArgumentException("task may not be null"); 
         }
-        synchronized(msgs ) {
+        synchronized(this) {
             if (active != null) {
                 msgs.add(msg);
                 return;
             }
             active=msg;
         }
-        executor.execute(this);
+        executor.execute(this::run);
     }
 
-    @Override
-    public final void run() {
-        for (;;) {
-            act(active);
-            synchronized(msgs) {
-                if ((active = msgs.poll())==null) {
-                    return;
-                }
+    private void run() {
+        act(active);
+        synchronized(this) {
+            if ((active = msgs.poll()) == null) {
+                return;
             }
         }
+        executor.execute(this::run);
     }
     
     protected abstract void act(T message);

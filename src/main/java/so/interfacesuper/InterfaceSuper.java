@@ -6,9 +6,6 @@ public class InterfaceSuper {
         default void f3() {
             System.out.println("f3");
         }
-        static void sf() {
-            System.out.println("f1, f2");
-        }
     }
 
     static class MyImpl implements IMy {
